@@ -13,26 +13,35 @@
 
 void parseDirectory(DIR *directory, char path[]){
 
+    //We go through every file of the directory
     struct dirent *fileInfo;
     while (( fileInfo = readdir(directory)) != NULL) {
         char *nextFolderName = fileInfo->d_name;
 
-        if (nextFolderName[0] != '.'){
+        //We write info about the file in snapshot.txt ===TBD===
 
+
+        if (nextFolderName[0] != '.'){
+            //We generate the path to the next possible directory
             char tempPath[1000] = "";
             strcat(tempPath,path);
             strcat(tempPath,nextFolderName);
             strcat(tempPath,"/");
+
+            //Debug purposes
             printf("%s - %s\n", nextFolderName, tempPath);
+
+            //The next directory is initialised
+            //If not null it will be parsed
             DIR *nextFolder = opendir(tempPath);
-            if (nextFolder != NULL)
-            {
-                parseDirectory(nextFolder,tempPath);
+            if (nextFolder != NULL) {
+                parseDirectory(nextFolder, tempPath);
             }
+
         }
+
     }
 }
-
 
 
 int main(int argc, char* argv[]){
@@ -41,33 +50,14 @@ int main(int argc, char* argv[]){
         return -1;
     }*/
     char *path = "/home/florin/Desktop/os/CA/";
+
     DIR *directory = opendir(path);
     if (directory == NULL){
         printf("Could not open directory\n");
         return -1;
     }
-    struct dirent *fileInfo;
-    while (( fileInfo = readdir(directory)) != NULL) {
-        char *nextFolderName = fileInfo->d_name;
-        if (nextFolderName[0] != '.'){
-            char tempPath[1000] = "";
-            strcat(tempPath,path);
-            strcat(tempPath,nextFolderName);
-            strcat(tempPath,"/");
-            printf("%s - %s\n", nextFolderName, tempPath);
 
-            DIR *nextFolder = opendir(tempPath);
-            if (nextFolder != NULL)
-            {
-                //printf("===%s===\n",tempPath);
-                parseDirectory(nextFolder, tempPath);
-            }
-
-        }
-
-    }
-
-    //parseDirectory(directory,strcat(path,"/"));
+    parseDirectory(directory, path);
 
     return 0;
 }
