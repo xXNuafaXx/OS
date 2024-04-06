@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <time.h>
+
 //Description: The proposed project combines functionalities for monitoring a directory to manage differences between two captures (snapshots) of it.
 // The user will be able to observe and intervene in the changes in the monitored directory.
 
@@ -77,35 +77,24 @@ int findAvailableSnapshotNumber(char *path){
     return count;
 }
 
-char *generateName(char *path){
-    char tempName[1024] = "\0";
-    strcpy(tempName,path);
-    for (int i = 0; i < strlen(path); ++i) {
-        if(tempName[i] == '/')
-            tempName[i] = '-';
-    }
-    /*time_t t;
-    time(&t);
-    strcat(tempName, ctime(&t));*/
-    return strdup(tempName);
-}
-
-char *makeName(char *path){
-    unsigned long pathSize = strlen(path) + strlen("Snapshots/") + 5;
-    char tempPath[pathSize];
+char *makeSnapshotName(char *path){
+    char tempPath[100] = "\0";
     strcpy(tempPath,path);
-    strcat(tempPath, "Snapshots/snapshot");
-    strcat(tempPath, generateName(path));
-    strcat(tempPath, ".txt");
+    for (int i = 0; i < strlen(tempPath); ++i) {
+        if(tempPath[i] == '/')
+            tempPath[i] = '-';
+    }
+    tempPath[strlen(tempPath)-1] = '\0';
+    printf("%s\n",tempPath);
     return strdup(tempPath);
 }
 
-char *makePath(char *path){
-    unsigned long pathSize = strlen(path) + strlen("Snapshots/") + 5;
+char *makePath(char *snapshotPath, char *dirPath){
+    unsigned long pathSize = 100 + strlen("Snapshots/") + 5;
     char tempPath[pathSize];
-    strcpy(tempPath,path);
+    strcpy(tempPath, snapshotPath);
     strcat(tempPath, "Snapshots/snapshot");
-    //strcat(tempPath, itoa(findAvailableSnapshotNumber(path)));
+    strcat(tempPath, makeSnapshotName(dirPath));
     strcat(tempPath, ".txt");
     return strdup(tempPath);
 }
@@ -122,11 +111,7 @@ void parseDirectory(DIR *directory, char path[],int fd){
     while (( fileInfo = readdir(directory)) != NULL) {
         char *nextFolderName = fileInfo->d_name;
 
-
-
-
         if (nextFolderName[0] != '.'){
-
             //We write info about the file in snapshot.txt ===TBD===
             char buff[4096];
             strcpy(buff,"\0");
@@ -142,16 +127,13 @@ void parseDirectory(DIR *directory, char path[],int fd){
             strcat(tempPath,nextFolderName);
             strcat(tempPath,"/");
 
-            //Debug purposes
-            printf("%s - %s\n", nextFolderName, tempPath);
-
             //The next directory is initialised
             //If not null it will be parsed
             DIR *nextFolder = opendir(tempPath);
             if (nextFolder != NULL) {
                 parseDirectory(nextFolder, tempPath, fd);
             }
-            close(fd);
+
         }
 
     }
@@ -163,25 +145,24 @@ int main(int argc, char* argv[]){
         printf("Wrong number of arguments\n");
         return -1;
     }
-    char path[100] = "";
-    strcpy(path,argv[3]);
-    /*printf("%s\n", path);
-    printf("%s", makePath(path));*/
-    //char *path = "/home/florin/Desktop/os/";
-
-    DIR *directory = opendir(path);
-    if (directory == NULL){
-        printf("Could not open directory\n");
+    if (strcmp(argv[1],"-o") != 0) {
+        printf("Second argument should be -o\n");
+        printf("And state the output folder for the snapshots\n");
         return -1;
     }
-    //printf("%d\n",findAvailableSnapshotNumber(path));
-    char snapshotPath[1024] = "\0";
-    strcpy(snapshotPath,argv[2]);
-    strcat(snapshotPath,"snapshots/");
-    //printf("%s",snapshotPath);
-    int fd = getFileDescriptor(makePath(snapshotPath));
-    parseDirectory(directory, path, fd);
-    //printf("%s", makePath(path));
-    //printf(" %d", getFileDescriptor(makePath(path)));
+    char path[100] = "\0";
+    for (int i = 3; i < argc; ++i) {
+        makeSnapshotName(argv[i]);
+        int fd = getFileDescriptor(makePath(argv[2],argv[i]));
+
+        strcpy(path,argv[i]);
+
+        DIR *directory = opendir(path);
+        if (directory == NULL){
+            printf("Could not open directory\n");
+            return -1;
+        }
+        parseDirectory(directory, path, fd);
+    }
     return 0;
 }
