@@ -62,7 +62,7 @@ void parseDirectory(DIR *directory, char path[],int fd){
         //The next directory is initialised and if not null it will be parsed
         DIR *nextFolder = opendir(tempPath);
         if (nextFolder != NULL) {
-            printf("%s === %d\n",tempPath,fd);
+            //printf("%s === %d\n",tempPath,fd);
             parseDirectory(nextFolder, tempPath, fd);
         }
     }
@@ -83,17 +83,18 @@ int main(int argc, char* argv[]){
     for (int i = 3; i < argc; ++i) {
         pid_t childPid;
         childPid = fork();
-        if(childPid != 0)
-            continue;
-
-        int fd = getFileDescriptor(makeSnapshotPath(argv[2], argv[i]));
-        strcpy(path,argv[i]);
-        DIR *directory = opendir(path);
-        if (directory == NULL){
-            printf("Could not open directory\n");
-            return -1;
+        if(childPid == 0) {
+            int fd = getFileDescriptor(makeSnapshotPath(argv[2], argv[i]));
+            strcpy(path, argv[i]);
+            printf("%s\n",path);
+            DIR *directory = opendir(path);
+            if (directory == NULL) {
+                printf("Could not open directory\n");
+                return -1;
+            }
+            parseDirectory(directory, path, fd);
+            return 0;
         }
-        parseDirectory(directory, path, fd);
     }
     for (int i = 3; i < argc; ++i) {
         wait(NULL);
