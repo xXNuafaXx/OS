@@ -46,16 +46,15 @@ int checkPermissions(char *path){
             //perror("stat - checkPermissions()");
         }
     }
-    int hasPermissions = 0;
 
     //Check if it's readable, writable or executable in any group
     if (st.st_mode & S_IRUSR || st.st_mode & S_IRGRP || st.st_mode & S_IROTH
      || st.st_mode & S_IWUSR || st.st_mode & S_IWGRP || st.st_mode & S_IWOTH
      || st.st_mode & S_IXUSR || st.st_mode & S_IXGRP || st.st_mode & S_IXOTH) {
-        hasPermissions = 1;
+        return 1;
     }
-
-    return hasPermissions;
+    printf("%s\n",path);
+    return 0;
 }
 
 void moveFile(const char *filename, const char *destinationFolder) {
@@ -75,11 +74,12 @@ void moveFile(const char *filename, const char *destinationFolder) {
     }
 }
 
-int analyzeFile(char *path){
-    int give_access=chmod(path, 7777); //giving read access to the "malicious file"
+int analyzeFile(char *path, char *isolationFolder){
+    int give_access=chmod(path, 777); //giving read access to the "malicious file"
     path[strlen(path)-1] = '\0';
     char argument[100];  //making the command to run the script
-    snprintf(argument, sizeof(argument), "./analysis.sh \'%s\'", path);
+    printf("%s\n",path);
+    snprintf(argument, sizeof(argument), "./analysis.sh \'%s'", path);
 
     int file_status = system(argument); //executing the script
     if(file_status != 0) printf("virusat\n");
@@ -91,15 +91,14 @@ int analyzeFile(char *path){
     return file_status;
 }
 
-int checkFile(char *path){
+int checkFile(char *path,char *isolationFolder){
     if(checkPermissions(path) == 0){
-        printf("am intrat === ");
-        return analyzeFile(path);
+        //return analyzeFile(path,isolationFolder);
     }
-    return 0;
+    return 1;
 }
 
-void parseDirectory(DIR *directory, char path[],int fd){
+void parseDirectory(DIR *directory, char path[],char *isolationFolder,int fd){
 
     //We go through every file of the directory
     struct dirent *fileInfo;
@@ -125,15 +124,15 @@ void parseDirectory(DIR *directory, char path[],int fd){
         strcat(tempPath,"/");
 
         //printf("=== %d - %s ===\n", checkPermissions(tempPath),tempPath);
-        if(checkFile(tempPath) == 0){
-            printf("path -> %s\n",tempPath);
+        if(checkFile(tempPath,isolationFolder) == 0){
+            printf("virus -> %s\n",tempPath);
         }
 
         //The next directory is initialised and if not null it will be parsed
         DIR *nextFolder = opendir(tempPath);
         if (nextFolder != NULL) {
             //printf("%s === %d\n",tempPath,fd);
-            parseDirectory(nextFolder, tempPath, fd);
+            parseDirectory(nextFolder, tempPath, isolationFolder, fd);
         }
     }
 }
@@ -165,10 +164,10 @@ int main(int argc, char* argv[]){
             //printf("%s\n",path);
             DIR *directory = opendir(path);
             if (directory == NULL) {
-                printf("Could not open directory\n");
+                //printf("Could not open directory\n");
                 return -1;
             }
-            parseDirectory(directory, path, fd);
+            parseDirectory(directory, path,argv[4], fd);
             return 0;
         }
     }
