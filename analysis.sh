@@ -23,8 +23,10 @@ echo "Number of characters: $num_chars"
 
 # Search for keywords associated with corrupted or malicious files
 echo "Searching for keywords associated with corrupted or malicious files..."
-
-if grep -qEi 'corrupted|dangerous|risk|attack|malware|malicious|[^ -~]' "$1"; then
+if file "$1" | grep -q "non-ASCII"; then
+    exit 1
+fi
+if grep -qEi 'corrupted|dangerous|risk|attack|malware|malicious' "$1"; then
     echo "Potential corrupted or malicious content found."
     exit 1
 else
