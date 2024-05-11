@@ -17,19 +17,22 @@ num_lines=$(wc -l < "$1")
 num_words=$(wc -w < "$1")
 num_chars=$(wc -m < "$1")
 
-echo "Number of lines: $num_lines"
-echo "Number of words: $num_words"
-echo "Number of characters: $num_chars"
-
-# Search for keywords associated with corrupted or malicious files
-echo "Searching for keywords associated with corrupted or malicious files..."
+# Check the conditions
+if [ "$num_lines" -lt 3 ]; then
+    if [ "$num_words" -gt 1000 ]; then
+        if [ "$num_chars" -gt 2000 ]; then
+            "Potentially malicious file ->" "$1"
+            exit 1;
+        fi
+    fi
+fi
 if file "$1" | grep -q "non-ASCII"; then
+    echo "Potentially malicious file ->" "$1"
     exit 1
 fi
 if grep -qEi 'corrupted|dangerous|risk|attack|malware|malicious' "$1"; then
-    echo "Potential corrupted or malicious content found."
+    echo "Potentially malicious file ->" "$1"
     exit 1
-else
-    echo "No corrupted or malicious content found."
-    exit 0
 fi
+echo "False positive ->" "$1"
+exit 0
