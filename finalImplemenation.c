@@ -199,7 +199,10 @@ int checkFile(char *path){
         return 0;
     return 1;
 }
-
+// Checking for differences between snapshots is not implemented
+// by updating the snapshot file every time we get the same expected behaviour
+// while not wasting time on unnecessary checks as even the smallest change in the file
+// would result in having to overwrite the snapshot file
 void parseDirectory(DIR *directory, char path[],char *isolationFolder,int fd){
 
     //We go through every file of the directory
